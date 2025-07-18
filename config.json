@@ -1,12 +1,16 @@
 {
-  "rtsp_url": "rtsp://<user>:<password>@<ipaddress>:<port>",
+  "rtsp_url": "rtsp_link",
   "model_path": "yolov8n.pt",
   "frame_interval": 30,
+  "off_hours": {
+  	"enabled": true,
+	"start": "9:00 PM",
+    	"end": "8:30 AM"
+  },
   "mqtt": {
-    "broker": "ipaddress",
-    "port": 1883,
-    "topic_status": "parking/status",
-    "topic_camera_status": "parking/camera/status"
+    	"broker": "brokerip",
+    	"port": 1883,
+    	"topic_status": "parking/status",
+    	"topic_camera_status": "parking/camera/status"
   }
 }
-

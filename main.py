@@ -4,6 +4,7 @@ import json
 import time
 import paho.mqtt.client as mqtt
 from ultralytics import YOLO
+from datetime import datetime
 
 # === LOAD CONFIGURATION ===
 with open('config.json', 'r') as f:
@@ -28,8 +29,27 @@ model = YOLO(MODEL_PATH)
 
 # === INIT MQTT CLIENT ===
 mqtt_client = mqtt.Client()
+mqtt_client.will_set(MQTT_CAMERA_STATUS_TOPIC, payload="offline", qos=1, retain=True)
 mqtt_client.connect(MQTT_BROKER, MQTT_PORT)
 mqtt_client.loop_start()
+
+# === OFF-HOURS CHECK ===
+def is_off_hours():
+    if not CONFIG.get("off_hours", {}).get("enabled", False):
+        return False
+
+    start_str = CONFIG["off_hours"]["start"]
+    end_str = CONFIG["off_hours"]["end"]
+    now = datetime.now().time()
+
+    # Convert from AM/PM format to time objects
+    start = datetime.strptime(start_str, "%I:%M %p").time()
+    end = datetime.strptime(end_str, "%I:%M %p").time()
+
+    if start < end:
+        return start <= now <= end
+    else:
+        return now >= start or now <= end
 
 def is_occupied(spot, detections):
     for det in detections:
@@ -58,6 +78,15 @@ def main():
 
     try:
         while True:
+            # Check if we are in off-hours
+            if is_off_hours():
+                last_camera_status = publish_camera_status("idle", last_camera_status)
+                print("🌙 Off-hours: Skipping parking check.")
+                time.sleep(60)
+                continue
+            else:
+                last_camera_status = publish_camera_status("online", last_camera_status)
+
             current_time = time.time()
             elapsed_time = current_time - previous_frame_time
 
