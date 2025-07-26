@@ -1,10 +1,10 @@
 {
-    "allowed_classes": [          // "allowed_classes": [2, 3, 5, 7] | [Car,Motorcycle,Bus,Truck]
+    "allowed_classes": [
         2
     ],
-    "conf_threshold": 0.3,          // Very low — will detect almost everything, including weak/confused predictions | But if you get too many false positives, increase to 0.2 or 0.3
-    "frame_interval": 30,                   // Controls how often frames are processed (in seconds )
-    "intersection_threshold": 0.3,  // Determines how much overlap is required to say an object is inside a spot | You could go a bit higher (0.4) for stricter rules or lower (0.2) for loose inclusion.
+    "conf_threshold": 0.3,
+    "frame_interval": 30,
+    "intersection_threshold": 0.3,
     "model_path": "yolo11l.pt",
     "mqtt": {
         "broker": "BROKER_IP",
