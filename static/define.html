@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Define Parking Spots</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #222;
+      color: #eee;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+    }
+    canvas {
+      border: 2px solid #666;
+      margin-top: 10px;
+      cursor: crosshair;
+      background: #000;
+      max-width: 100%;
+    }
+    #instructions {
+      margin: 10px auto;
+      font-size: 14px;
+      max-width: 600px;
+    }
+    button {
+      margin: 5px;
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      background-color: #444;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+    }
+    button:hover {
+      background-color: #666;
+    }
+    #status {
+      margin-top: 10px;
+      height: 18px;
+    }
+    #button-bar {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Define Parking Spots</h2>
+<div id="instructions">
+  Click <strong>4 points</strong> to define one parking spot.<br />
+  Use: <strong>Undo Last Spot</strong>, <strong>Reset All</strong>, <strong>Save Spots</strong>
+</div>
+
+<canvas id="canvas" width="1920" height="1080"></canvas>
+
+<div id="button-bar">
+  <button id="undoBtn">Undo Last Spot</button>
+  <button id="resetBtn">Reset All</button>
+  <button id="saveBtn">Save Spots</button>
+  <button onclick="window.location.href='/'">Back to Dashboard</button>
+</div>
+
+<div id="status"></div>
+
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+
+  let image = new Image();
+  let spots = [];
+  let currentSpot = [];
+
+  function loadImage() {
+    image.src = `/frame_for_define?${Date.now()}`;
+  }
+
+  image.onload = () => {
+    draw();
+  };
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    // Draw defined spots
+    spots.forEach((spot, idx) => {
+      ctx.strokeStyle = 'lime';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      spot.forEach((pt, i) => {
+        if (i === 0) ctx.moveTo(pt[0], pt[1]);
+        else ctx.lineTo(pt[0], pt[1]);
+      });
+      ctx.closePath();
+      ctx.stroke();
+
+      ctx.fillStyle = 'white';
+      ctx.font = '16px Arial';
+      ctx.fillText(`Spot ${idx + 1}`, spot[0][0] + 5, spot[0][1] - 5);
+    });
+
+    // Draw current spot points
+    currentSpot.forEach(pt => {
+      ctx.fillStyle = 'yellow';
+      ctx.beginPath();
+      ctx.arc(pt[0], pt[1], 6, 0, 2 * Math.PI);
+      ctx.fill();
+    });
+
+    // Draw connecting lines for current spot
+    if (currentSpot.length > 1) {
+      ctx.strokeStyle = 'yellow';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      currentSpot.forEach((pt, i) => {
+        if (i === 0) ctx.moveTo(pt[0], pt[1]);
+        else ctx.lineTo(pt[0], pt[1]);
+      });
+      ctx.stroke();
+    }
+  }
+
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.round(e.clientX - rect.left);
+    const y = Math.round(e.clientY - rect.top);
+
+    currentSpot.push([x, y]);
+
+    if (currentSpot.length === 4) {
+      spots.push(currentSpot);
+      currentSpot = [];
+    }
+    draw();
+  });
+
+  document.getElementById('undoBtn').addEventListener('click', () => {
+    if (spots.length > 0) {
+      spots.pop();
+      currentSpot = [];
+      setStatus('Last spot removed.');
+      draw();
+    }
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    spots = [];
+    currentSpot = [];
+    setStatus('All spots reset.');
+    draw();
+  });
+
+  document.getElementById('saveBtn').addEventListener('click', () => {
+    if (spots.length === 0) {
+      setStatus('No spots to save.', true);
+      return;
+    }
+    fetch('/save_spots', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ spots }),
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 'success') {
+        setStatus('✅ Parking spots saved successfully.');
+      } else {
+        setStatus('❌ Error saving spots: ' + data.message, true);
+      }
+    })
+    .catch(err => setStatus('❌ Error saving spots: ' + err.message, true));
+  });
+
+  function setStatus(msg, isError = false) {
+    const statusDiv = document.getElementById('status');
+    statusDiv.textContent = msg;
+    statusDiv.style.color = isError ? 'red' : 'lime';
+  }
+
+  // Initial load
+  loadImage();
+
+  // Reload image every 10 seconds
+  setInterval(() => {
+    loadImage();
+  }, 10000);
+</script>
+
+</body>
+</html>
+
