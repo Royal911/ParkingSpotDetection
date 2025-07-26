@@ -36,3 +36,4 @@
    - Open the webpage : http://localhost:5000/   - replace the locahost with your host ip
     	<img width="1020" height="780" alt="image" src="https://github.com/user-attachments/assets/e408560b-84ea-4271-8c0e-2e23bd7e3b2a" />
    - Go to Define Spots and Define your own spots for detection
+   - There is also a http://localhost:5000/latest_frame.jpg that you can use if planning to use Home Assistant to send picture with notification when there is a free or ocupied space 
